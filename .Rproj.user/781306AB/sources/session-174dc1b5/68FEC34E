@@ -3,7 +3,7 @@
     "path": "~/Other_projects/ML_workshop/ML_workshop/index.qmd",
     "project_path": "index.qmd",
     "type": "quarto_markdown",
-    "hash": "0",
+    "hash": "3501547063",
     "contents": "",
     "dirty": false,
     "created": 1712305784420.0,
@@ -12,20 +12,20 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "55,7",
-        "scrollLine": "41",
-        "rmdVisualMode": "false",
+        "cursorPosition": "52,31",
+        "scrollLine": "26",
+        "rmdVisualMode": "true",
         "rmdVisualWrapConfigured": "true",
         "docOutlineVisible": "1",
         "rmdVisualCollapsedChunks": "",
-        "rmdVisualModeLocation": "2:686"
+        "rmdVisualModeLocation": "1886:500"
     },
     "folds": "",
-    "lastKnownWriteTime": 1712305881,
+    "lastKnownWriteTime": 1712309635,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1712305881010,
+    "last_content_update": 1712309635224,
     "read_only": false,
     "read_only_alternatives": []
 }
