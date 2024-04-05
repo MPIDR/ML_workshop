@@ -6,7 +6,6 @@ website:
   title: "Demystifying ML Rostock November 5-6"
   sidebar:
     background: primary
-    # logo: "images/logo.png"
     pinned: true
     align: center
     tools:
