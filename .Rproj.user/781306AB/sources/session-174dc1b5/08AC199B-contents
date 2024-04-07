@@ -1,0 +1,4 @@
+install.packages("HMDHFDplus")
+library(HMDHFDplus)
+help(HMDHFDplus)
+??HMDHFDplus
