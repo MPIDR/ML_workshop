@@ -3,7 +3,7 @@
     "path": "~/Other_projects/ML_workshop/ML_workshop/_quarto.yml",
     "project_path": "_quarto.yml",
     "type": "yaml",
-    "hash": "3963742311",
+    "hash": "2121456842",
     "contents": "",
     "dirty": false,
     "created": 1712515122929.0,
@@ -12,15 +12,15 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "8,0",
-        "scrollLine": "0"
+        "cursorPosition": "19,15",
+        "scrollLine": "9"
     },
     "folds": "",
-    "lastKnownWriteTime": 1712305843,
+    "lastKnownWriteTime": 1723631560,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1712305843,
+    "last_content_update": 1723631560219,
     "read_only": false,
     "read_only_alternatives": []
 }

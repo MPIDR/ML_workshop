@@ -17,7 +17,7 @@ website:
       - href: index.qmd
         text: Call for contributions
       - href: schedule.qmd
-        text: Preliminary program
+        text: Program
       - href: rostock.qmd
         text: Rostock
       - href: contact.qmd
