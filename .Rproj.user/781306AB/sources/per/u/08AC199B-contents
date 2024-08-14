@@ -2,3 +2,5 @@ install.packages("HMDHFDplus")
 library(HMDHFDplus)
 help(HMDHFDplus)
 ??HMDHFDplus
+
+26*( (1.8-1 ) / (1.8))
