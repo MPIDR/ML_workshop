@@ -3,7 +3,7 @@
     "path": "~/Other_projects/ML_workshop/ML_workshop/schedule.qmd",
     "project_path": "schedule.qmd",
     "type": "quarto_markdown",
-    "hash": "0",
+    "hash": "83780714",
     "contents": "",
     "dirty": false,
     "created": 1723631527955.0,
@@ -11,14 +11,16 @@
     "relative_order": 5,
     "properties": {
         "source_window_id": "",
-        "Source": "Source"
+        "Source": "Source",
+        "cursorPosition": "17,109",
+        "scrollLine": "7"
     },
     "folds": "",
-    "lastKnownWriteTime": 1723629524,
+    "lastKnownWriteTime": 1724401120,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1723629524,
+    "last_content_update": 1724401120618,
     "read_only": false,
     "read_only_alternatives": []
 }
