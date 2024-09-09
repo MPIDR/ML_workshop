@@ -1,0 +1,207 @@
+function_cf <- function(data,outcome_name) {
+  set.seed(4444)
+  
+  data$outcome <- data[[outcome_name]] 
+  
+  df <- data %>%  
+    dplyr::select(-starts_with("o_")) %>%
+    filter(complete.cases(.))
+
+  Y <- df$outcome %>%
+    as.matrix()
+  W <- df$treatment %>%
+    as.matrix()
+  X <- df %>%  dplyr::select(-treatment,-outcome)  %>%
+    as.matrix()
+  
+  y.forest <- regression_forest(X,Y,
+                                tune.parameters = "all",
+                                num.trees =  1000, 
+                                seed =1)
+  y.hat <- predict(y.forest)$predictions
+  
+  W.forest <- regression_forest(X,W,
+                                tune.parameters = "all",
+                                num.trees =  1000, 
+                                seed =1
+                                )
+  W.hat <- predict(W.forest)$predictions
+
+  cf_pre <- causal_forest(X = X,
+                          Y= Y,
+                          W = W,
+                          Y.hat=y.hat,
+                          W.hat= W.hat, 
+                          tune.parameters = "all",
+                          num.trees =  1000, 
+                          seed =1)
+  
+  #throwing away unnecessary variables
+  varimp <-variable_importance(cf_pre)
+  selected.covariates = which(varimp / mean(varimp) > 1)
+  X <- X[,selected.covariates]
+  
+ cf_no_clust <- causal_forest(X=X, Y=Y, W=W, 
+                            Y.hat=y.hat,
+                        W.hat= W.hat, 
+                      tune.parameters = "all",
+                      num.trees =  1000, 
+                      seed =1)
+  average_effect<- average_treatment_effect(cf_no_clust, target.sample = "treated")
+  varimp <-variable_importance(cf_no_clust)
+  variable_importance<-cbind(colnames(X),varimp)
+  
+  omnibus<- test_calibration(cf_no_clust)
+  predictions <- cf_no_clust$predictions
+  
+  num.rankings <- 4
+  num.folds <- 10
+  n <-nrow(X)
+ # folds <- sort(seq(n) %% num.folds) + 1
+  folds <- sample(c(1:num.folds), replace = TRUE, size=n)
+  cf_folds <- causal_forest(X=X, Y=Y, W=W, 
+                           Y.hat=y.hat,
+                            W.hat= W.hat, 
+                          clusters = folds, 
+                           tune.parameters = "all",
+                           num.trees =  1000, 
+                           seed=1)
+  tau.hat <- predict(cf_folds)$predictions
+
+  ranking <- rep(NA, n)
+  for (fold in seq(num.folds)) {
+    tau.hat.quantiles <- quantile(tau.hat[folds == fold], probs = seq(0, 1, by=1/num.rankings))
+    ranking[folds == fold] <- cut(tau.hat[folds == fold], 
+                                  tau.hat.quantiles, include.lowest=TRUE,labels=seq(num.rankings))
+    
+  }
+  
+  df$outcome <-as.numeric(df$outcome)
+  df$treatment <-as.numeric(df$treatment)
+  df$ranking <- factor(ranking)
+  
+  ols.ate <- lm(outcome ~ 0+ ranking+ ranking:treatment, data = df)
+  ols.ate <- coeftest(ols.ate, vcov=vcovHC(ols.ate, type='HC2'))
+  interact <- which(grepl(":", rownames(ols.ate)))
+  ols.ate <- data.frame("Raw",paste0("Q",seq(num.rankings)), ols.ate[interact,1:2])
+  rownames(ols.ate) <- NULL
+  colnames(ols.ate) <- c("method","ranking","estimate","std.err")
+  
+  tau.hat <- predict(cf_folds)$predictions
+  e.hat <- cf_folds$W.hat
+  m.hat <- cf_folds$Y.hat
+  mu.hat.0 <- m.hat - e.hat * tau.hat
+  mu.hat.1 <- m.hat + (1-e.hat) * tau.hat
+  aipw.scores <- tau.hat + W / e.hat * (Y- mu.hat.1) - (1 - W)/(1 - e.hat) * (Y - mu.hat.0)
+  ols <- lm(aipw.scores ~0+ factor(ranking))
+  ols <- coeftest(ols, vcov=vcovHC(ols, type='HC2'))[,1:2]
+  forest.ate <- data.frame("aipw",paste0("Q",seq(num.rankings)), ols)
+  rownames(forest.ate) <- NULL
+  colnames(forest.ate) <- c("method","ranking","estimate","std.err")
+  
+  #adding main effects here
+  lm.main <-lm(outcome ~ 1 + treatment, data = df)
+  summary(lm.main)
+  ols.ate.pooled <- coeftest(lm.main, vcov=vcovHC(lm.main, type='HC2'))
+  ols.ate.pooled <- data.frame("Raw","raw_diff", ols.ate.pooled[2,1],ols.ate.pooled[2,2])
+  rownames(ols.ate.pooled) <- NULL
+  colnames(ols.ate.pooled) <- c("method","ranking","estimate","std.err")
+  
+  ols <- lm(aipw.scores ~1)
+  ols <- coeftest(ols, vcov=vcovHC(ols, type='HC2'))
+  forest.ate.pooled <- data.frame("aipw","raw_diff", ols[,1],ols[,2])
+  rownames(forest.ate.pooled) <- NULL
+  colnames(forest.ate.pooled) <- c("method","ranking","estimate","std.err")
+  
+  estimates <- rbind(ols.ate,
+                     forest.ate,
+                     forest.ate.pooled,
+                     ols.ate.pooled)
+  
+  estimates$outcomes<- outcome_name
+  
+  ranking_means <- df %>%
+    group_by(ranking) %>%
+    summarise(across(everything(), list(mean = mean, sd = sd), .names = "{fn}__{col}"))  %>%
+    pivot_longer(-ranking, names_to = c(".value","Variable"), names_sep = "__")
+  ranking_means$outcomes<- outcome_name
+  
+  
+  gate4 <- df %>% filter(ranking==4) %>% dplyr::select(-ranking)
+  gate1 <- df %>% filter(ranking==1) %>% dplyr::select(-ranking)
+  
+  means_4 <- colMeans(gate4, na.rm = TRUE)
+  means_1 <- colMeans(gate1, na.rm = TRUE)
+  sd_gate4 <- apply(gate4, 2,sd, na.rm = TRUE)
+  sd_gate1 <- apply(gate1, 2,sd, na.rm = TRUE)
+  sd_pooled <- sqrt((sd_gate4^2 + sd_gate1^2) / 2)
+  std_diffs <- (means_4-means_1) / sd_pooled
+  
+  standardised_diff <- data.frame(Covariate = names(std_diffs),
+                                  std_diff = std_diffs,
+                                  outcome = outcome_name)
+  
+  #then graphs
+  df$predictions <- predict(cf_folds)$predictions
+  df_for_graphs <- df %>%
+    dplyr::select(predictions,colnames(X))
+  
+  cont_vars <- df_for_graphs %>% 
+    dplyr::select(where( ~is.numeric(.) && n_distinct(.)>=20)) %>%
+    dplyr::select(-starts_with("o_")) %>%
+    dplyr::select(-starts_with("somatic")) %>%
+    dplyr::select(-predictions) %>%
+    names()
+  
+  long <- df_for_graphs %>%
+    pivot_longer(cols = all_of(cont_vars), names_to = "variable", values_to = "value")
+  
+  long <- long %>%
+    group_by(variable) %>%
+    mutate(pc95 = quantile(value, probs=0.99, na.rm = TRUE),
+           value = ifelse(value>pc95, pc95, value)
+    ) %>%
+    dplyr::select(-pc95) %>%
+    mutate(type="categ")
+  
+
+  p_continous<-ggplot() +
+   geom_jitter(data = long, aes(x = value, y = predictions), alpha = 0.003) +
+  geom_smooth(data = long, aes(x = value, y = predictions), se = FALSE, color = "blue") +
+  facet_wrap( ~variable, scales = "free_x", nrow= 3) + 
+  theme_minimal()
+  
+  #categorical variables
+  cat_vars <- df_for_graphs %>% 
+    dplyr::select(where( (~is.numeric(.) && n_distinct(.)<20)) | starts_with("edu")) %>%
+    dplyr::select(-starts_with("o_")) %>%
+    dplyr::select(-starts_with("x_")) %>%
+    dplyr::select(-starts_with("psyc_")) %>%
+    names()
+  
+  long_cat <- df_for_graphs %>%
+    pivot_longer(cols = all_of(cat_vars), names_to = "variable", values_to = "value") %>%
+    mutate(value= as.factor(value))  %>% 
+    dplyr::select(value, variable, predictions) %>% 
+    mutate(type="categ")
+  
+  p_cate<-ggplot(long_cat, aes(x = value, y = predictions))+
+    geom_boxplot(,outlier.shape = NA) +
+    facet_wrap( ~variable, scales = "free_x") + 
+    theme_minimal()
+
+  
+  results <- list(
+    quartiles = estimates,
+    predictions = predictions,
+    standardised_diff=standardised_diff,
+    variable_importance=variable_importance,
+    p_continous=p_continous,
+    p_cate=p_cate,
+    omnibus= omnibus,
+    ATT=average_effect,
+    ranking_mean= ranking_means
+  )
+  
+  return(results)
+}

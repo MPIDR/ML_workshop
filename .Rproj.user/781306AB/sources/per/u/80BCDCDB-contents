@@ -1,0 +1,8 @@
+means_4<-0.05
+means_1<-0.54
+sd_gate4<-0.22
+sd_gate1<-0.50
+sd_pooled <- sqrt((sd_gate4^2 + sd_gate1^2) / 2)
+std_diffs <- (means_4-means_1) / sd_pooled
+
+std_diffs
