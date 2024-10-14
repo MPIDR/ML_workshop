@@ -1,9 +1,9 @@
 {
     "id": "AAA722CA",
-    "path": "~/Other_projects/ML_workshop/ML_workshop/schedule.qmd",
+    "path": "C:/Cloud/Documents/Other_projects/ML_workshop/ML_workshop/schedule.qmd",
     "project_path": "schedule.qmd",
     "type": "quarto_markdown",
-    "hash": "83780714",
+    "hash": "3655886940",
     "contents": "",
     "dirty": false,
     "created": 1723631527955.0,
@@ -12,15 +12,15 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "17,109",
-        "scrollLine": "0"
+        "cursorPosition": "11,34",
+        "scrollLine": "9"
     },
     "folds": "",
-    "lastKnownWriteTime": 1724401120,
+    "lastKnownWriteTime": 1728906614,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1724401120618,
+    "last_content_update": 1728906614090,
     "read_only": false,
     "read_only_alternatives": []
 }
